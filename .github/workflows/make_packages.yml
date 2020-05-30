@@ -1,0 +1,142 @@
+name: Make and upload Conda packages
+
+on:
+  push:
+    branches:
+      - master
+  create:
+    tags:
+      - '*'
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ANACONDA_USER: labscript-suite
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - { os: ubuntu-latest,   python: 3.8,  arch: x64 }
+          # - { os: ubuntu-latest,   python: 3.7,  arch: x64 }
+          # - { os: ubuntu-latest,   python: 3.6,  arch: x64 }
+
+          # - { os: macos-latest,    python: 3.8,  arch: x64 }
+          # - { os: macos-latest,    python: 3.7,  arch: x64 }
+          # - { os: macos-latest,    python: 3.6,  arch: x64 }
+
+          # - { os: windows-latest,  python: 3.8,  arch: x64 }
+          # - { os: windows-latest,  python: 3.7,  arch: x64 }
+          # - { os: windows-latest,  python: 3.6,  arch: x64 }
+
+          # - { os: windows-latest,  python: 3.8,  arch: x86 }
+          # - { os: windows-latest,  python: 3.7,  arch: x86 }
+          # - { os: windows-latest,  python: 3.6,  arch: x86 }
+
+    if: github.repository == 'labscript-suite/vendored-conda-builds' && (github.event_name != 'create' || github.event.ref_type != 'branch')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set BUILD_NOARCH=true
+        if: strategy.job-index == 0
+        run: echo "::set-env name=BUILD_NOARCH::true"
+
+      - name: Set Variables for Conda Build
+        run: |
+          if [ $RUNNER_OS == Windows ] && [ ${{ matrix.arch }} == x64 ]; then
+              CONDA_INSTALLER=Miniconda3-latest-Windows-x86_64.exe
+          elif [ $RUNNER_OS == Windows ]; then
+              CONDA_INSTALLER=Miniconda3-latest-Windows-x86.exe
+          elif [ $RUNNER_OS == Linux ]; then
+              CONDA_INSTALLER=Miniconda3-latest-Linux-x86_64.sh
+          else
+              CONDA_INSTALLER=Miniconda3-latest-MacOSX-x86_64.sh
+          fi
+          if [ $NOARCH == true ]; then
+              CONDA_BUILD_ARGS="--noarch"
+          else
+              CONDA_BUILD_ARGS=""
+          fi
+          echo "::set-env name=CONDA_INSTALLER::$CONDA_INSTALLER"
+          echo "::set-env name=CONDA_BUILD_ARGS::$CONDA_BUILD_ARGS"
+
+      - name: Conda package (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          curl -LO https://repo.continuum.io/miniconda/$CONDA_INSTALLER
+          bash "$CONDA_INSTALLER" -b -p .miniconda
+          source .miniconda/etc/profile.d/conda.sh
+          conda activate
+          conda update -n base -c defaults conda
+          conda create -n py${{ matrix.python }} python=${{ matrix.python }}
+          conda activate py${{ matrix.python }}
+          conda install -c cbillington setuptools-conda
+          python make_packages.py
+
+      - name: Conda Package (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          curl -LO https://repo.continuum.io/miniconda/%CONDA_INSTALLER%
+          %CONDA_INSTALLER% /S /D=%CD%\.miniconda && ^
+          .miniconda\Scripts\activate && ^
+          conda update -n base -c defaults conda && ^
+          conda create -n py${{ matrix.python }} python=${{ matrix.python }} && ^
+          conda activate py${{ matrix.python }} && ^
+          conda install -c cbillington setuptools-conda && ^
+          pip install --upgrade setuptools_scm && ^
+          python make_packages.py
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: conda_packages
+          path: ./conda_packages
+
+  upload:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: conda_packages
+        path: ./conda_packages
+
+    - name: Install Miniconda and cloud client
+      run: |
+        curl -LO https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh 
+        bash Miniconda3-latest-Linux-x86_64.sh -b -p .miniconda
+        source .miniconda/etc/profile.d/conda.sh
+        conda activate
+        conda install anaconda-client
+
+    - name: Publish to Anaconda test label
+      if: github.event.ref_type != 'tag'
+      run: |
+        source .miniconda/etc/profile.d/conda.sh
+        conda activate
+        anaconda \
+          --token ${{ secrets.ANACONDA_API_TOKEN }} \
+          upload \
+          --user $ANACONDA_USER \
+          --label test \
+          conda_packages/*/*
+
+    - name: Publish to Anaconda main label
+      if: github.event.ref_type == 'tag'
+      run: |
+        source .miniconda/etc/profile.d/conda.sh
+        conda activate
+        anaconda \
+          --token ${{ secrets.ANACONDA_API_TOKEN }} \
+          upload \
+          --user $ANACONDA_USER \
+          conda_packages/*/*
