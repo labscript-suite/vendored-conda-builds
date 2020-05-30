@@ -42,7 +42,7 @@ jobs:
           # - { os: windows-latest,  python: 3.7,  arch: x86 }
           # - { os: windows-latest,  python: 3.6,  arch: x86 }
 
-    if: github.repository == 'labscript-suite/vendored-conda-builds' && (github.event_name != 'create' || github.event_name == 'schedule' || github.event.ref_type != 'branch')
+    if: github.repository == 'labscript-suite/vendored-conda-builds' && (github.event_name != 'create' || github.event.ref_type != 'branch' || github.event_name == 'schedule')
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -129,7 +129,7 @@ jobs:
         conda install anaconda-client
 
     - name: Publish to Anaconda test label
-      if: github.event.ref_type != 'tag' && github.event.ref_type != 'schedule'
+      if: github.event.ref_type != 'tag' && github.event_name == 'schedule'
       run: |
         source .miniconda/etc/profile.d/conda.sh
         conda activate
@@ -142,7 +142,7 @@ jobs:
           conda_packages/*/*
 
     - name: Publish to Anaconda main label
-      if: github.event.ref_type == 'tag' || github.event.ref_type == 'schedule'
+      if: github.event.ref_type == 'tag' || github.event_name == 'schedule'
       run: |
         source .miniconda/etc/profile.d/conda.sh
         conda activate
