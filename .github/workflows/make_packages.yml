@@ -138,6 +138,7 @@ jobs:
           upload \
           --user $ANACONDA_USER \
           --label test \
+          --skip-existing \
           conda_packages/*/*
 
     - name: Publish to Anaconda main label
@@ -149,4 +150,5 @@ jobs:
           --token ${{ secrets.ANACONDA_API_TOKEN }} \
           upload \
           --user $ANACONDA_USER \
+          --skip-existing \
           conda_packages/*/*
