@@ -1,11 +1,11 @@
 # vendored-conda-builds
 
-This is a repository to create conda builds of 3rd party packages and upload them to the
-labscript-suite Anaconda Cloud repository.
+This is a repository to create Conda builds of 3rd party packages and upload them to the
+[labscript-suite Anaconda Cloud repository](https://anaconda.org/labscript-suite/repo).
 
 This way these packages (which are otherwise not available in the conda repository) can
 be made available to labscript-suite users using conda. We also may make packages
-avaialble on the labscript-suite Anaconda Cloud repository even if they are available on
+available on the labscript-suite Anaconda Cloud repository even if they are available on
 conda-forge, to reduce the need for users to use conda-forge to obtain packages not in
 the main conda repository.
 
