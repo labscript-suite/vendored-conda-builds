@@ -19,7 +19,7 @@ import shutil
 # installed.
 
 if platform.system() == 'Windows' and sys.maxsize > 2 ** 32:
-    PLATFORM = 'win-62'
+    PLATFORM = 'win-64'
 elif platform.system() == 'Windows':
     PLATFORM = 'win-32'
 elif platform.system() == 'Linux':
