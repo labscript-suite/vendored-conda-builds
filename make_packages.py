@@ -31,13 +31,14 @@ else:
 
 
 def download(name, source, version):
-    """Download an  sdist from given source and return the resulting file - stem and
-    extension separately"""
+    """Download an  uncompress an sdist from given source and return the resulting
+    directory"""
+    # Download the sdist
     if source == 'pypi':
         name_with_version = name
         if version != 'latest':
             name_with_version += f'=={version}'
-        # Download the sdist
+
         download_cmd = [
             'pip',
             'download',
@@ -52,12 +53,28 @@ def download(name, source, version):
 
     check_call(download_cmd)
 
+    # Find it:
     for path in Path('build').iterdir():
         if path.stem.rsplit('-', 1)[0] == name:
-            for extension in ['.zip', '.tar.gz']:
-                if path.name.endswith(extension):
-                    return Path('build', path.name.rsplit(extension, 1)[0]), extension
-    raise RuntimeError("Can't find sdist")
+            if path.name.endswith('.zip'):
+                extension = '.zip'
+                break
+            if path.name.endswith('.tar.gz'):
+                extension = '.tar.gz'
+                break
+    else:
+        raise RuntimeError("Can't find sdist")
+
+    # Decompress it:
+    base = Path('build', path.name.rsplit(extension, 1)[0])
+    if extension == '.tar.gz':
+        check_call(['tar', 'xvf', path, '-C', 'build'])
+    elif extension == '.zip':
+        check_call(['unzip', path, '-d', 'build'])
+    if source.startswith('git+'):
+        return Path('build', source.strip('/').split('/')[-1])
+    else:
+        return base
 
 
 def build_conda_package(name, spec):
@@ -82,15 +99,7 @@ def build_conda_package(name, spec):
             return
 
     # Download it:
-    base, extension = download(name, source, version)
-
-    # Unpack it
-    if extension == '.tar.gz':
-        check_call(['tar', 'xvf', f'{base}{extension}', '-C', 'build'])
-    elif extension == '.zip':
-        check_call(['unzip', f'{base}{extension}', '-d', str(base)])
-
-    project_dir = Path(base)
+    project_dir = download(name, source, version)
 
     # Build it
     if noarch:
