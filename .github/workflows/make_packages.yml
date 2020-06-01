@@ -34,13 +34,13 @@ jobs:
           # - { os: macos-latest,    python: 3.7,  arch: x64 }
           # - { os: macos-latest,    python: 3.6,  arch: x64 }
 
-          # - { os: windows-latest,  python: 3.8,  arch: x64 }
-          # - { os: windows-latest,  python: 3.7,  arch: x64 }
-          # - { os: windows-latest,  python: 3.6,  arch: x64 }
+          - { os: windows-latest,  python: 3.8,  arch: x64 }
+          - { os: windows-latest,  python: 3.7,  arch: x64 }
+          - { os: windows-latest,  python: 3.6,  arch: x64 }
 
-          # - { os: windows-latest,  python: 3.8,  arch: x86 }
-          # - { os: windows-latest,  python: 3.7,  arch: x86 }
-          # - { os: windows-latest,  python: 3.6,  arch: x86 }
+          - { os: windows-latest,  python: 3.8,  arch: x86 }
+          - { os: windows-latest,  python: 3.7,  arch: x86 }
+          - { os: windows-latest,  python: 3.6,  arch: x86 }
 
     if: github.repository == 'labscript-suite/vendored-conda-builds' && (github.event_name != 'create' || github.event.ref_type != 'branch' || github.event_name == 'schedule')
     steps:

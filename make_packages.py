@@ -30,57 +30,73 @@ else:
     raise ValueError(platform.system())
 
 
-def build_conda_package(name, spec):
-    version = spec.get('version', defaults['version'])
-    pythons = spec.get('pythons', defaults['pythons'])
-    platforms = spec.get('platforms', defaults['platforms'])
-    noarch = spec.get('noarch', defaults['noarch'])
-    build_args = spec.get('build_args', defaults['build_args'])[:]
-
-    if noarch and not os.getenv('BUILD_NOARCH'):
-        return
-    elif not noarch:
-        if PLATFORM not in platforms:
-            return
-
-        if f'{sys.version_info.major}.{sys.version_info.minor}' not in pythons:
-            return
-
-    name_with_version = name
-    if version != 'latest':
-        name_with_version += f'=={version}'
-
-    # Download the sdist
-    download_cmd = [
-        'pip',
-        'download',
-        '--no-binary=:all:',
-        '--no-deps',
-        '--dest',
-        'build',
-        name_with_version,
-    ]
+def download(name, source, version):
+    """Download an  sdist from given source and return the resulting file - stem and
+    extension separately"""
+    if source == 'pypi':
+        name_with_version = name
+        if version != 'latest':
+            name_with_version += f'=={version}'
+        # Download the sdist
+        download_cmd = [
+            'pip',
+            'download',
+            '--no-binary=:all:',
+            '--no-deps',
+            '--dest',
+            'build',
+            name_with_version,
+        ]
+    else:
+        download_cmd = ['pip', 'download', '--dest', 'build', source]
 
     check_call(download_cmd)
 
-    # Find the sdist
     for path in Path('build').iterdir():
-        if path.stem.rsplit('-', 1)[0] == name and path.name.endswith('.tar.gz'):
-            sdist = path
-            break
-    else:
-        raise RuntimeError("Can't find sdist")
+        if path.stem.rsplit('-', 1)[0] == name:
+            for extension in ['.zip', '.tar.gz']:
+                if path.name.endswith(extension):
+                    return Path('build', path.name.rsplit(extension, 1)[0]), extension
+    raise RuntimeError("Can't find sdist")
+
+
+def build_conda_package(name, spec):
+    version = spec.get('version', defaults['version'])
+    source = spec.get('source', defaults['source'])
+    noarch = spec.get('noarch', defaults['noarch'])
+    build_args = spec.get('build_args', defaults['build_args'])[:]
+    pythons = spec.get('pythons', defaults['pythons'])
+    platforms = spec.get('platforms', defaults['platforms'])
+
+    if noarch and not os.getenv('BUILD_NOARCH'):
+        print(f"Skipping {name} as it is noarch but BUILD_NOARCH env var is not set")
+        return
+    elif not noarch:
+        if PLATFORM not in platforms:
+            print(f"Skipping {name} as {PLATFORM} is not in its list of platforms")
+            return
+
+        PY = f'{sys.version_info.major}.{sys.version_info.minor}'
+        if PY not in pythons:
+            print(f"Skipping {name} as {PY} is not in its list of Python versions")
+            return
+
+    # Download it:
+    base, extension = download(name, source, version)
 
     # Unpack it
-    check_call(['tar', 'xvf', sdist, '-C', 'build'])
+    if extension == '.tar.gz':
+        check_call(['tar', 'xvf', f'{base}{extension}', '-C', 'build'])
+    elif extension == '.zip':
+        check_call(['unzip', f'{base}{extension}', '-d', str(base)])
 
-    project_dir = Path('build', sdist.name.rsplit('.tar.gz', 1)[0])
+    project_dir = Path(base)
 
     # Build it
     if noarch:
         build_args += ['--noarch']
 
-    check_call(['setuptools-conda', 'build', *build_args, project_dir])
+    check_call(['setuptools-conda', 'build', *build_args, str(project_dir)])
 
     for arch in Path(project_dir, 'conda_packages').iterdir():
         for package in arch.iterdir():
