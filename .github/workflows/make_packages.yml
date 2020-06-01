@@ -68,13 +68,7 @@ jobs:
           else
               CONDA_INSTALLER=Miniconda3-latest-MacOSX-x86_64.sh
           fi
-          if [ $NOARCH == true ]; then
-              CONDA_BUILD_ARGS="--noarch"
-          else
-              CONDA_BUILD_ARGS=""
-          fi
           echo "::set-env name=CONDA_INSTALLER::$CONDA_INSTALLER"
-          echo "::set-env name=CONDA_BUILD_ARGS::$CONDA_BUILD_ARGS"
 
       - name: Conda package (Unix)
         if: runner.os != 'Windows'

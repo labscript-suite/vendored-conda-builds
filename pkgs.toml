@@ -27,4 +27,4 @@ build_args = ['--license-file=None']
 source = "git+https://github.com/zephyrproject-rtos/windows-curses/"
 noarch = false
 build_args = ["--from-downloaded-wheel"]
-platforms = ["win-32", "win-64", "linux"]
+platforms = ["win-32", "win-64"]
