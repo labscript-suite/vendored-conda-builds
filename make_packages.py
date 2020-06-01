@@ -68,9 +68,9 @@ def download(name, source, version):
     # Decompress it:
     base = Path('build', path.name.rsplit(extension, 1)[0])
     if extension == '.tar.gz':
-        check_call(['tar', 'xvf', path, '-C', 'build'])
+        check_call(['tar', 'xvf', str(path), '-C', 'build'])
     elif extension == '.zip':
-        check_call(['unzip', path, '-d', 'build'])
+        check_call(['unzip', str(path), '-d', 'build'])
     if source.startswith('git+'):
         return Path('build', source.strip('/').split('/')[-1])
     else:
