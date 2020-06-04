@@ -122,18 +122,18 @@ jobs:
         conda activate
         conda install anaconda-client
 
-    - name: Publish to Anaconda test label
-      if: github.event.ref_type != 'tag' && github.event_name != 'schedule'
-      run: |
-        source .miniconda/etc/profile.d/conda.sh
-        conda activate
-        anaconda \
-          --token ${{ secrets.ANACONDA_API_TOKEN }} \
-          upload \
-          --user $ANACONDA_USER \
-          --label test \
-          --skip-existing \
-          conda_packages/*/*
+    # - name: Publish to Anaconda test label
+    #   if: github.event.ref_type != 'tag' && github.event_name != 'schedule'
+    #   run: |
+    #     source .miniconda/etc/profile.d/conda.sh
+    #     conda activate
+    #     anaconda \
+    #       --token ${{ secrets.ANACONDA_API_TOKEN }} \
+    #       upload \
+    #       --user $ANACONDA_USER \
+    #       --label test \
+    #       --skip-existing \
+    #       conda_packages/*/*
 
     - name: Publish to Anaconda main label
       if: github.event.ref_type == 'tag' || github.event_name == 'schedule'
