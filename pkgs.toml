@@ -14,11 +14,6 @@ platforms = ["win-32", "win-64", "osx", "linux"]
 [PyDAQmx]
 build_args = ['--license-file=None']
 
-
-[pyqtgraph]
-# TODO: remove once 0.11 is released and available in the conda repository
-version = '0.11.0rc0'
-
 [pynivision]
 # TODO: We own pynivision now, so we should release it the normal way.
 build_args = ['--license-file=None']
