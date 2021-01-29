@@ -55,7 +55,7 @@ jobs:
 
       - name: Set BUILD_NOARCH=true
         if: strategy.job-index == 0
-        run: echo "::set-env name=BUILD_NOARCH::true"
+        run: echo "BUILD_NOARCH=true" >> $GITHUB_ENV
 
       - name: Set Variables for Conda Build
         run: |
@@ -68,7 +68,7 @@ jobs:
           else
               CONDA_INSTALLER=Miniconda3-latest-MacOSX-x86_64.sh
           fi
-          echo "::set-env name=CONDA_INSTALLER::$CONDA_INSTALLER"
+          echo "CONDA_INSTALLER=$CONDA_INSTALLER" >> $GITHUB_ENV
 
       - name: Conda package (Unix)
         if: runner.os != 'Windows'
