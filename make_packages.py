@@ -71,7 +71,6 @@ def download(name, source, version):
         check_call(['tar', 'xvf', str(path), '-C', 'build'])
     elif extension == '.zip':
         check_call(['unzip', str(path), '-d', 'build'])
-        sys.exit(0)
     if source.startswith('git+'):
         return Path('build', source.strip('/').split('/')[-1])
     else:

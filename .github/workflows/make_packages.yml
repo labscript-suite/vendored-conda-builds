@@ -92,13 +92,11 @@ jobs:
           %CONDA_INSTALLER% /S /D=%CD%\.miniconda && ^
           .miniconda\Scripts\activate && ^
           conda update -n base -c defaults conda && ^
-          conda create -n py${{ matrix.python }} python=${{ matrix.python }} && ^
-          conda activate py${{ matrix.python }} && ^
           conda install -c cbillington setuptools-conda && ^
           python make_packages.py
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
