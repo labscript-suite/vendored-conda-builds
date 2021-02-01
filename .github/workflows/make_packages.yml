@@ -87,14 +87,13 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          curl -LO https://repo.continuum.io/miniconda/%CONDA_INSTALLER%
+          curl -LO https://repo.continuum.io/miniconda/%CONDA_INSTALLER% && ^
           %CONDA_INSTALLER% /S /D=%CD%\.miniconda && ^
           .miniconda\Scripts\activate && ^
           conda update -n base -c defaults conda && ^
           conda create -n py${{ matrix.python }} python=${{ matrix.python }} && ^
           conda activate py${{ matrix.python }} && ^
           conda install -c cbillington setuptools-conda && ^
-          pip install --upgrade setuptools_scm && ^
           python make_packages.py
 
       - name: Upload Artifact
