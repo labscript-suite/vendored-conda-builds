@@ -3,7 +3,8 @@ name: Make and upload Conda packages
 on:
   push:
     branches:
-      - master
+      # - master
+      - debug
   create:
     tags:
       - '*'
@@ -26,7 +27,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - { os: ubuntu-latest,   python: 3.8,  arch: x64 }
+          # - { os: ubuntu-latest,   python: 3.8,  arch: x64 }
           # - { os: ubuntu-latest,   python: 3.7,  arch: x64 }
           # - { os: ubuntu-latest,   python: 3.6,  arch: x64 }
 
@@ -35,12 +36,12 @@ jobs:
           # - { os: macos-latest,    python: 3.6,  arch: x64 }
 
           - { os: windows-latest,  python: 3.8,  arch: x64 }
-          - { os: windows-latest,  python: 3.7,  arch: x64 }
-          - { os: windows-latest,  python: 3.6,  arch: x64 }
+          # - { os: windows-latest,  python: 3.7,  arch: x64 }
+          # - { os: windows-latest,  python: 3.6,  arch: x64 }
 
-          - { os: windows-latest,  python: 3.8,  arch: x86 }
-          - { os: windows-latest,  python: 3.7,  arch: x86 }
-          - { os: windows-latest,  python: 3.6,  arch: x86 }
+          # - { os: windows-latest,  python: 3.8,  arch: x86 }
+          # - { os: windows-latest,  python: 3.7,  arch: x86 }
+          # - { os: windows-latest,  python: 3.6,  arch: x86 }
 
     if: github.repository == 'labscript-suite/vendored-conda-builds' && (github.event_name != 'create' || github.event.ref_type != 'branch' || github.event_name == 'schedule')
     steps:
@@ -53,9 +54,9 @@ jobs:
         if: github.event_name == 'schedule'
         run: git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
 
-      - name: Set BUILD_NOARCH=true
-        if: strategy.job-index == 0
-        run: echo "BUILD_NOARCH=true" >> $GITHUB_ENV
+      # - name: Set BUILD_NOARCH=true
+      #   if: strategy.job-index == 0
+      #   run: echo "BUILD_NOARCH=true" >> $GITHUB_ENV
 
       - name: Set Variables for Conda Build
         run: |
@@ -95,6 +96,9 @@ jobs:
           conda activate py${{ matrix.python }} && ^
           conda install -c cbillington setuptools-conda && ^
           python make_packages.py
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
