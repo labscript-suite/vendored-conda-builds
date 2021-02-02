@@ -96,19 +96,20 @@ jobs:
         name: conda_packages
         path: ./conda_packages
 
-    - name: Install Miniconda and cloud client
+    - name: Install Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+
+    - name: Install cloud client
+      shell: bash -l {0}
       run: |
-        curl -LO https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh 
-        bash Miniconda3-latest-Linux-x86_64.sh -b -p .miniconda
-        source .miniconda/etc/profile.d/conda.sh
-        conda activate
         conda install anaconda-client
 
     # - name: Publish to Anaconda test label
     #   if: github.event.ref_type != 'tag' && github.event_name != 'schedule'
+    #   shell: bash -l {0}
     #   run: |
-    #     source .miniconda/etc/profile.d/conda.sh
-    #     conda activate
     #     anaconda \
     #       --token ${{ secrets.ANACONDA_API_TOKEN }} \
     #       upload \
@@ -119,9 +120,8 @@ jobs:
 
     - name: Publish to Anaconda main label
       if: github.event.ref_type == 'tag' || github.event_name == 'schedule'
+      shell: bash -l {0}
       run: |
-        source .miniconda/etc/profile.d/conda.sh
-        conda activate
         anaconda \
           --token ${{ secrets.ANACONDA_API_TOKEN }} \
           upload \
