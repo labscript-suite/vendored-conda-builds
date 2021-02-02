@@ -4,7 +4,7 @@ source = "pypi"
 noarch = true
 build_args = [] # --noarch will automatically be added if applicable
 # The below will only be used if noarch is False
-pythons = ["3.6", "3.7", "3.8"]
+pythons = ["3.6", "3.7", "3.8", "3.9"]
 platforms = ["win-32", "win-64", "osx", "linux"]
 
 

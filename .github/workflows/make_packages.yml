@@ -26,18 +26,22 @@ jobs:
     strategy:
       matrix:
         include:
-          - { os: ubuntu-latest,   python: 3.8,  arch: x64 }
+          - { os: ubuntu-latest,   python: 3.9,  arch: x64 }
+          # - { os: ubuntu-latest,   python: 3.8,  arch: x64 }
           # - { os: ubuntu-latest,   python: 3.7,  arch: x64 }
           # - { os: ubuntu-latest,   python: 3.6,  arch: x64 }
 
+          # - { os: macos-latest,    python: 3.9,  arch: x64 }
           # - { os: macos-latest,    python: 3.8,  arch: x64 }
           # - { os: macos-latest,    python: 3.7,  arch: x64 }
           # - { os: macos-latest,    python: 3.6,  arch: x64 }
 
+          - { os: windows-latest,  python: 3.9,  arch: x64 }
           - { os: windows-latest,  python: 3.8,  arch: x64 }
           - { os: windows-latest,  python: 3.7,  arch: x64 }
           - { os: windows-latest,  python: 3.6,  arch: x64 }
 
+          - { os: windows-latest,  python: 3.9,  arch: x86 }
           - { os: windows-latest,  python: 3.8,  arch: x86 }
           - { os: windows-latest,  python: 3.7,  arch: x86 }
           - { os: windows-latest,  python: 3.6,  arch: x86 }
@@ -103,8 +107,7 @@ jobs:
 
     - name: Install cloud client
       shell: bash -l {0}
-      run: |
-        conda install anaconda-client
+      run: conda install anaconda-client
 
     # - name: Publish to Anaconda test label
     #   if: github.event.ref_type != 'tag' && github.event_name != 'schedule'
