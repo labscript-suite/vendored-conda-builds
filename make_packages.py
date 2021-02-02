@@ -18,6 +18,16 @@ import shutil
 # This script must be run from within a conda environment with pip and setuptools-conda
 # installed.
 
+# Have had massive headaches with the filepaths being too long on GitHub Actions,
+# causing conda-build to choke inexplicably. Allow a directory to be passed in as a
+# command line arg. The workflow will pass in the value of runner.temp, which is a short
+# filepath for a temporary directory we can use.
+if len(sys.argv) > 1:
+    BUILD_DIR = sys.argv[1]
+else:
+    BUILD_DIR = 'build'
+
+
 if platform.system() == 'Windows' and sys.maxsize > 2 ** 32:
     PLATFORM = 'win-64'
 elif platform.system() == 'Windows':
@@ -45,16 +55,16 @@ def download(name, source, version):
             '--no-binary=:all:',
             '--no-deps',
             '--dest',
-            'build',
+            BUILD_DIR,
             name_with_version,
         ]
     else:
-        download_cmd = ['pip', 'download', '--dest', 'build', source]
+        download_cmd = ['pip', 'download', '--dest', BUILD_DIR, source]
 
     check_call(download_cmd)
 
     # Find it:
-    for path in Path('build').iterdir():
+    for path in Path(BUILD_DIR).iterdir():
         if path.stem.rsplit('-', 1)[0] == name:
             if path.name.endswith('.zip'):
                 extension = '.zip'
@@ -66,13 +76,13 @@ def download(name, source, version):
         raise RuntimeError("Can't find sdist")
 
     # Decompress it:
-    base = Path('build', path.name.rsplit(extension, 1)[0])
+    base = Path(BUILD_DIR, path.name.rsplit(extension, 1)[0])
     if extension == '.tar.gz':
-        check_call(['tar', 'xvf', str(path), '-C', 'build'])
+        check_call(['tar', 'xvf', str(path), '-C', BUILD_DIR])
     elif extension == '.zip':
-        check_call(['unzip', str(path), '-d', 'build'])
+        check_call(['unzip', str(path), '-d', BUILD_DIR])
     if source.startswith('git+'):
-        return Path('build', source.strip('/').split('/')[-1])
+        return Path(BUILD_DIR, source.strip('/').split('/')[-1])
     else:
         return base
 
@@ -115,7 +125,7 @@ def build_conda_package(name, spec):
 
 
 if __name__ == '__main__':
-    Path('build').mkdir(exist_ok=True)
+    Path(BUILD_DIR).mkdir(exist_ok=True)
     packages = toml.load('pkgs.toml')
     defaults = packages['defaults']
 
