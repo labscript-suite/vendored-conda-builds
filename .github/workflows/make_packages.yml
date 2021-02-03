@@ -103,29 +103,32 @@ jobs:
     - name: Install Miniconda
       uses: conda-incubator/setup-miniconda@v2
       with:
+        miniconda-version: "latest"
         auto-update-conda: true
+        auto-activate-base: true
+        activate-environment: ""
 
     - name: Install cloud client
       shell: bash -l {0}
       run: conda install anaconda-client
 
-    - name: Publish to Anaconda test label
-      if: github.event.ref_type != 'tag' && github.event_name != 'schedule'
-      shell: bash -l {0}
-      run: |
-        anaconda -v \
-          --token ${{ secrets.ANACONDA_API_TOKEN }} \
-          upload \
-          --user $ANACONDA_USER \
-          --label test \
-          --skip-existing \
-          conda_packages/*/*
+    # - name: Publish to Anaconda test label
+    #   if: github.event.ref_type != 'tag' && github.event_name != 'schedule'
+    #   shell: bash -l {0}
+    #   run: |
+    #     anaconda \
+    #       --token ${{ secrets.ANACONDA_API_TOKEN }} \
+    #       upload \
+    #       --user $ANACONDA_USER \
+    #       --label test \
+    #       --skip-existing \
+    #       conda_packages/*/*
 
     - name: Publish to Anaconda main label
       if: github.event.ref_type == 'tag' || github.event_name == 'schedule'
       shell: bash -l {0}
       run: |
-        anaconda -v \
+        anaconda \
           --token ${{ secrets.ANACONDA_API_TOKEN }} \
           upload \
           --user $ANACONDA_USER \
