@@ -53,6 +53,7 @@ def download(name, source, version):
             'pip',
             'download',
             '--no-binary=:all:',
+            '--no-build-isolation',
             '--no-deps',
             '--dest',
             BUILD_DIR,
