@@ -128,7 +128,7 @@ def build_conda_package(name, spec):
             'build',
             *build_args,
             '--build-dir',
-            build_dir,
+            str(build_dir),
             str(project_dir),
         ]
     )
