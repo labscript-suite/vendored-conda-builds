@@ -116,7 +116,22 @@ def build_conda_package(name, spec):
     if noarch:
         build_args += ['--noarch']
 
-    check_call(['setuptools-conda', 'build', *build_args, str(project_dir)])
+    # Put the conda_build directory outside the project directory, otherwise it can be
+    # detected as a top-level Python package in a flat layout not otherwise specifying
+    # its modules in setup.py or setup.cfg, resulting in an error. Have observed this
+    # with PyVISA.
+    build_dir = Path(BUILD_DIR).absolute() / 'conda_build' / name
+
+    check_call(
+        [
+            'setuptools-conda',
+            'build',
+            *build_args,
+            '--build-dir',
+            build_dir,
+            str(project_dir),
+        ]
+    )
 
     for arch in Path(project_dir, 'conda_packages').iterdir():
         for package in arch.iterdir():
