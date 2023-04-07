@@ -11,11 +11,6 @@ on:
     # - cron: '0-59/5 * * * *' # Every 5 minutes
     - cron: '0 00 * * 0' # Weekly, 12AM Sundays UTC
 
-
-defaults:
-  run:
-    shell: bash
-
 env:
   ANACONDA_USER: labscript-suite
 
@@ -26,30 +21,34 @@ jobs:
     strategy:
       matrix:
         include:
-          - { os: ubuntu-latest,   python: 3.9,  arch: x64 }
-          # - { os: ubuntu-latest,   python: 3.8,  arch: x64 }
-          # - { os: ubuntu-latest,   python: 3.7,  arch: x64 }
-          # - { os: ubuntu-latest,   python: 3.6,  arch: x64 }
+          - { os: ubuntu-latest,   python: '3.11',  arch: x64}
+          # - { os: ubuntu-latest,   python: '3.10',  arch: x64 }
+          # - { os: ubuntu-latest,   python: '3.9',  arch: x64 }
+          # - { os: ubuntu-latest,   python: '3.8',  arch: x64 }
+          # - { os: ubuntu-latest,   python: '3.7',  arch: x64 }
 
-          # - { os: macos-latest,    python: 3.9,  arch: x64 }
-          # - { os: macos-latest,    python: 3.8,  arch: x64 }
-          # - { os: macos-latest,    python: 3.7,  arch: x64 }
-          # - { os: macos-latest,    python: 3.6,  arch: x64 }
+          # - { os: macos-11,    python: '3.11',  arch: x64 }
+          # - { os: macos-11,    python: '3.10',  arch: x64 }
+          # - { os: macos-11,    python: '3.9',  arch: x64 }
+          # - { os: macos-11,    python: '3.8',  arch: x64 }
+          # - { os: macos-11,    python: '3.7',  arch: x64 }
 
-          - { os: windows-latest,  python: 3.9,  arch: x64 }
-          - { os: windows-latest,  python: 3.8,  arch: x64 }
-          - { os: windows-latest,  python: 3.7,  arch: x64 }
-          - { os: windows-latest,  python: 3.6,  arch: x64 }
+          - { os: windows-latest,  python: '3.11',  arch: x64 }
+          - { os: windows-latest,  python: '3.10',  arch: x64 }
+          - { os: windows-latest,  python: '3.9',  arch: x64 }
+          - { os: windows-latest,  python: '3.8',  arch: x64 }
+          - { os: windows-latest,  python: '3.7',  arch: x64 }
 
-          - { os: windows-latest,  python: 3.9,  arch: x86 }
-          - { os: windows-latest,  python: 3.8,  arch: x86 }
-          - { os: windows-latest,  python: 3.7,  arch: x86 }
-          - { os: windows-latest,  python: 3.6,  arch: x86 }
+          # - { os: windows-latest,  python: '3.11',  arch: x86 } # conda not yet available
+          - { os: windows-latest,  python: '3.10',  arch: x86 }
+          - { os: windows-latest,  python: '3.9',  arch: x86 }
+          - { os: windows-latest,  python: '3.8',  arch: x86 }
+          - { os: windows-latest,  python: '3.7',  arch: x86 }
 
     if: github.repository == 'labscript-suite/vendored-conda-builds' && (github.event_name != 'create' || github.event.ref_type != 'branch' || github.event_name == 'schedule')
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -62,16 +61,19 @@ jobs:
         run: echo "BUILD_NOARCH=true" >> $GITHUB_ENV
 
       - name: Install Miniconda
-        # We need https://github.com/conda-incubator/setup-miniconda/pull/189 in order
-        # to be able to install 32-bit miniconda on Windows. Once setup-miniconda 2.1.2
-        # is released with this fix, can change to @v2.
-        uses: conda-incubator/setup-miniconda@1a875d105ac03256664b54c882c8c374ce617ef6
+        uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python }}
           architecture: ${{ matrix.arch }}
           miniconda-version: "latest"
           
+      - name: Workaround conda-build incompatibility with xcode 12+
+        if: runner.os == 'macOS'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 11.7
+
       - name: Conda package (Unix)
         if: runner.os != 'Windows'
         shell: bash -l {0}
@@ -87,7 +89,7 @@ jobs:
           python make_packages.py ${{ runner.temp }}
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: conda_packages
           path: ./conda_packages
@@ -97,43 +99,41 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - name: Download Artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: conda_packages
-        path: ./conda_packages
+      
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: conda_packages
+          path: ./conda_packages
 
-    - name: Install Miniconda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        miniconda-version: "latest"
-        auto-update-conda: true
-        auto-activate-base: true
-        activate-environment: ""
+      - name: Install Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
 
-    - name: Install cloud client
-      shell: bash -l {0}
-      run: conda install anaconda-client
+      - name: Install cloud client
+        shell: bash -l {0}
+        run: conda install anaconda-client
 
-    # - name: Publish to Anaconda test label
-    #   if: github.event.ref_type != 'tag' && github.event_name != 'schedule'
-    #   shell: bash -l {0}
-    #   run: |
-    #     anaconda \
-    #       --token ${{ secrets.ANACONDA_API_TOKEN }} \
-    #       upload \
-    #       --user $ANACONDA_USER \
-    #       --label test \
-    #       --skip-existing \
-    #       conda_packages/*/*
+      # - name: Publish to Anaconda test label
+      #   if: github.event.ref_type != 'tag' && github.event_name != 'schedule'
+      #   shell: bash -l {0}
+      #   run: |
+      #     anaconda \
+      #       --token ${{ secrets.ANACONDA_API_TOKEN }} \
+      #       upload \
+      #       --user $ANACONDA_USER \
+      #       --label test \
+      #       --skip-existing \
+      #       conda_packages/*/*
 
-    - name: Publish to Anaconda main label
-      if: github.event.ref_type == 'tag' || github.event_name == 'schedule'
-      shell: bash -l {0}
-      run: |
-        anaconda \
-          --token ${{ secrets.ANACONDA_API_TOKEN }} \
-          upload \
-          --user $ANACONDA_USER \
-          --skip-existing \
-          conda_packages/*/*
+      - name: Publish to Anaconda main label
+        if: github.event.ref_type == 'tag' || github.event_name == 'schedule'
+        shell: bash -l {0}
+        run: |
+          anaconda \
+            --token ${{ secrets.ANACONDA_API_TOKEN }} \
+            upload \
+            --user $ANACONDA_USER \
+            --skip-existing \
+            conda_packages/*/*
