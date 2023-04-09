@@ -54,10 +54,12 @@ jobs:
 
       - name: Checkout latest tag
         if: github.event_name == 'schedule'
+        shell: bash -l {0}
         run: git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
 
       - name: Set BUILD_NOARCH=true
         if: strategy.job-index == 0
+        shell: bash -l {0}
         run: echo "BUILD_NOARCH=true" >> $GITHUB_ENV
 
       - name: Install Miniconda
