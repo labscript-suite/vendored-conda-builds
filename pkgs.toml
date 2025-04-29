@@ -21,7 +21,7 @@ build_args = ['--license-file=None']
 [windows-curses]
 source = "git+https://github.com/zephyrproject-rtos/windows-curses/"
 noarch = false
-build_args = []
+build_args = ['--from-downloaded-wheel']
 platforms = ["win-64"]
 
 [PyVISA]

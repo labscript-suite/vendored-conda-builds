@@ -77,7 +77,7 @@ def download(name, source, version):
                 extension = '.tar.gz'
                 break
     else:
-        raise RuntimeError("Can't find sdist")
+        raise RuntimeError(f"Can't find sdist for {name}")
 
     # Decompress it:
     base = Path(BUILD_DIR, path.name.rsplit(extension, 1)[0])
