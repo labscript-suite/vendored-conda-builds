@@ -33,7 +33,7 @@ jobs:
           # - { os: macos-11,    python: '3.8',  arch: x64 }
           # - { os: macos-11,    python: '3.7',  arch: x64 }
 
-          - { os: windows-latest,  python: '3.13',  arch: x64 }
+          #- { os: windows-latest,  python: '3.13',  arch: x64 } conda-build<25 not available here
           - { os: windows-latest,  python: '3.12',  arch: x64 }
           - { os: windows-latest,  python: '3.11',  arch: x64 }
           - { os: windows-latest,  python: '3.10',  arch: x64 }
