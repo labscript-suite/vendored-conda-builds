@@ -64,7 +64,7 @@ jobs:
           conda-remove-defaults: true
           python-version: ${{ matrix.python }}
           architecture: ${{ matrix.arch }}
-          activate-environment: ""
+          activate-environment: true
 
       - name: Conda package (Unix)
         if: runner.os != 'Windows'
