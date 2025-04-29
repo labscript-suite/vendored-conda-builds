@@ -4,12 +4,11 @@ on:
   push:
     branches:
       - master
-  create:
     tags:
       - '*'
   schedule:
     # - cron: '0-59/5 * * * *' # Every 5 minutes
-    - cron: '0 00 * * 0' # Weekly, 12AM Sundays UTC
+    - cron: '0 02 * * 0' # Weekly, 2AM Sundays UTC
 
 env:
   ANACONDA_USER: labscript-suite
@@ -19,9 +18,10 @@ jobs:
     name: Build
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest,   python: '3.11',  arch: x64}
+          - { os: ubuntu-latest,   python: '3.12',  arch: x64}
           # - { os: ubuntu-latest,   python: '3.10',  arch: x64 }
           # - { os: ubuntu-latest,   python: '3.9',  arch: x64 }
           # - { os: ubuntu-latest,   python: '3.8',  arch: x64 }
@@ -33,22 +33,16 @@ jobs:
           # - { os: macos-11,    python: '3.8',  arch: x64 }
           # - { os: macos-11,    python: '3.7',  arch: x64 }
 
+          - { os: windows-latest,  python: '3.13',  arch: x64 }
+          - { os: windows-latest,  python: '3.12',  arch: x64 }
           - { os: windows-latest,  python: '3.11',  arch: x64 }
           - { os: windows-latest,  python: '3.10',  arch: x64 }
           - { os: windows-latest,  python: '3.9',  arch: x64 }
-          - { os: windows-latest,  python: '3.8',  arch: x64 }
-          - { os: windows-latest,  python: '3.7',  arch: x64 }
 
-          # - { os: windows-latest,  python: '3.11',  arch: x86 } # conda not yet available
-          - { os: windows-latest,  python: '3.10',  arch: x86 }
-          - { os: windows-latest,  python: '3.9',  arch: x86 }
-          - { os: windows-latest,  python: '3.8',  arch: x86 }
-          - { os: windows-latest,  python: '3.7',  arch: x86 }
-
-    if: github.repository == 'labscript-suite/vendored-conda-builds' && (github.event_name != 'create' || github.event.ref_type != 'branch' || github.event_name == 'schedule')
+    if: github.repository == 'labscript-suite/vendored-conda-builds'
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -62,38 +56,34 @@ jobs:
         shell: bash -l {0}
         run: echo "BUILD_NOARCH=true" >> $GITHUB_ENV
 
-      - name: Install Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Install Miniforge
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          miniforge-version: "latest"
           auto-update-conda: true
+          conda-remove-defaults: true
           python-version: ${{ matrix.python }}
           architecture: ${{ matrix.arch }}
-          miniconda-version: "latest"
-          
-      - name: Workaround conda-build incompatibility with xcode 12+
-        if: runner.os == 'macOS'
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: 11.7
+          activate-environment: ""
 
       - name: Conda package (Unix)
         if: runner.os != 'Windows'
         shell: bash -l {0}
         run: |
-          conda install -c labscript-suite setuptools-conda
+          conda install -c labscript-suite setuptools-conda "conda-build<25"
           python make_packages.py ${{ runner.temp }}
 
       - name: Conda Package (Windows)
         if: runner.os == 'Windows'
         shell: cmd /C CALL {0}
         run: |
-          conda install -c labscript-suite setuptools-conda && ^
+          conda install -c labscript-suite setuptools-conda "conda-build<25" && ^
           python make_packages.py ${{ runner.temp }}
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: conda_packages
+          name: conda_packages-${{ matrix.os }}-py${{ matrix.python}}-${{ matrix.arch }}
           path: ./conda_packages
 
   upload:
@@ -103,17 +93,22 @@ jobs:
     steps:
       
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: conda_packages
+          pattern: conda_packages-*
           path: ./conda_packages
+          merge-multiple: true
 
-      - name: Install Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Install Miniforge
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          miniforge-version: "latest"
           auto-update-conda: true
+          conda-remove-defaults: true
+          auto-activate-base: true
+          activate-environment: ""
 
-      - name: Install cloud client
+      - name: Install Anaconda cloud client
         shell: bash -l {0}
         run: conda install anaconda-client
 
@@ -130,7 +125,7 @@ jobs:
       #       conda_packages/*/*
 
       - name: Publish to Anaconda main label
-        if: github.event.ref_type == 'tag' || github.event_name == 'schedule'
+        if: (github.event_name == 'push' && contains(github.ref, '/tags')) || github.event_name == 'schedule'
         shell: bash -l {0}
         run: |
           anaconda \

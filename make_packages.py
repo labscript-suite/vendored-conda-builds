@@ -34,8 +34,11 @@ elif platform.system() == 'Windows':
     PLATFORM = 'win-32'
 elif platform.system() == 'Linux':
     PLATFORM = 'linux'
-elif platform.system() == 'Dawrin':
-    PLATFORM = 'osx'
+elif platform.system() == 'Darwin':
+    if platform.machine() == 'arm64':
+        PLATFORM = 'osx-arm64'
+    else:
+        PLATFORM = 'osx-64'
 else:
     raise ValueError(platform.system())
 
