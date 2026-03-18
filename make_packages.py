@@ -9,11 +9,11 @@ import shutil
 
 # This script is designed to run from GitHub actions, Github actions will run jobs for
 # all of the platforms and Python versions we want to build packages for, and run this
-# script in each of them. Our job is to build a conda package if the current platform
-# and Python version is requested for a pacakge. Or, if it is a noarch package we only
-# want to build it on one of the jobs, and it doesn't matter which one. So the GitHub
-# workflow will set the environment variable BUILD_NOARCH=true for one of the jobs and
-# there we will build noarch packages.
+# script in each of them. Our job is to build a conda package, for all specified python
+# versions, if the current platform is requested for a package. Or, if it is a noarch
+# package we only want to build it on one of the jobs, and it doesn't matter which one.
+# So the GitHub workflow will set the environment variable BUILD_NOARCH=true for one of
+# the jobs and there we will build noarch packages.
 
 # This script must be run from within a conda environment with pip and setuptools-conda
 # installed.
@@ -21,11 +21,15 @@ import shutil
 # Have had massive headaches with the filepaths being too long on GitHub Actions,
 # causing conda-build to choke inexplicably. Allow a directory to be passed in as a
 # command line arg. The workflow will pass in the value of runner.temp, which is a short
-# filepath for a temporary directory we can use.
+# filepath for a temporary directory we can use. Any further arguments will be assigned
+# to CONDA_BUILD_ARGS and passed to setuptools-conda build. In particular, setting
+# --croot to a short path helps reduce max path lengths.
 if len(sys.argv) > 1:
     BUILD_DIR = sys.argv[1]
+    CONDA_BUILD_ARGS = sys.argv[2:]
 else:
     BUILD_DIR = 'build'
+    CONDA_BUILD_ARGS = []
 
 
 if platform.system() == 'Windows' and sys.maxsize > 2 ** 32:
@@ -107,17 +111,10 @@ def build_conda_package(name, spec):
             print(f"Skipping {name} as {PLATFORM} is not in its list of platforms")
             return
 
-        PY = f'{sys.version_info.major}.{sys.version_info.minor}'
-        if PY not in pythons:
-            print(f"Skipping {name} as {PY} is not in its list of Python versions")
-            return
-
     # Download it:
     project_dir = download(name, source, version)
 
     # Build it
-    if noarch:
-        build_args += ['--noarch']
 
     # Put the conda_build directory outside the project directory, otherwise it can be
     # detected as a top-level Python package in a flat layout not otherwise specifying
@@ -125,16 +122,30 @@ def build_conda_package(name, spec):
     # with PyVISA.
     build_dir = Path(BUILD_DIR).absolute() / 'conda_build' / name
 
-    check_call(
-        [
-            'setuptools-conda',
-            'build',
-            *build_args,
-            '--build-dir',
-            str(build_dir),
-            str(project_dir),
-        ]
-    )
+    build_args += CONDA_BUILD_ARGS
+
+    if noarch:
+        build_args += ['--noarch']
+        build_args_matrix = [build_args]
+    elif '--from-downloaded-wheel' not in build_args:
+        build_args += ['--pythons', ','.join(pythons)]
+        build_args_matrix = [build_args]
+    else:
+        # Need to call setuptools-conda build for each Python version separately when
+        # using --from-downloaded-wheel:
+        build_args_matrix = [[*build_args, '--pythons', python] for python in pythons]
+
+    for build_args_i in build_args_matrix:
+        check_call(
+            [
+                'setuptools-conda',
+                'build',
+                *build_args_i,
+                '--build-dir',
+                str(build_dir),
+                str(project_dir),
+            ]
+        )
 
     for arch in Path(project_dir, 'conda_packages').iterdir():
         for package in arch.iterdir():

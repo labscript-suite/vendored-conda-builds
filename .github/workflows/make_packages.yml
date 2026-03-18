@@ -20,29 +20,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { os: ubuntu-latest,   python: '3.12',  arch: x64}
-          # - { os: ubuntu-latest,   python: '3.10',  arch: x64 }
-          # - { os: ubuntu-latest,   python: '3.9',  arch: x64 }
-          # - { os: ubuntu-latest,   python: '3.8',  arch: x64 }
-          # - { os: ubuntu-latest,   python: '3.7',  arch: x64 }
-
-          # - { os: macos-11,    python: '3.11',  arch: x64 }
-          # - { os: macos-11,    python: '3.10',  arch: x64 }
-          # - { os: macos-11,    python: '3.9',  arch: x64 }
-          # - { os: macos-11,    python: '3.8',  arch: x64 }
-          # - { os: macos-11,    python: '3.7',  arch: x64 }
-
-          #- { os: windows-latest,  python: '3.13',  arch: x64 } conda-build<25 not available here
-          - { os: windows-latest,  python: '3.12',  arch: x64 }
-          - { os: windows-latest,  python: '3.11',  arch: x64 }
-          - { os: windows-latest,  python: '3.10',  arch: x64 }
-          - { os: windows-latest,  python: '3.9',  arch: x64 }
+        os: ["ubuntu-latest", "windows-latest"]
 
     if: github.repository == 'labscript-suite/vendored-conda-builds'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -62,29 +45,26 @@ jobs:
           miniforge-version: "latest"
           auto-update-conda: true
           conda-remove-defaults: true
-          python-version: ${{ matrix.python }}
-          architecture: ${{ matrix.arch }}
-          activate-environment: true
+          auto-activate: true
+          activate-environment: ""
 
-      - name: Conda package (Unix)
-        if: runner.os != 'Windows'
+      - name: Conda package
         shell: bash -l {0}
         run: |
-          conda install -c labscript-suite setuptools-conda "conda-build<25"
-          python make_packages.py ${{ runner.temp }}
+          CONDA_BUILD_ARGS=""
+          if [ "${{ runner.os }}" == Windows ]; then
+            # Short path to minimise odds of hitting Windows max path length
+            CONDA_BUILD_ARGS+=" --croot ${{ runner.temp }}\cb"
+          fi
+          conda install -c labscript-suite setuptools-conda
+          python make_packages.py "${{ runner.temp }}" $CONDA_BUILD_ARGS
 
-      - name: Conda Package (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd /C CALL {0}
-        run: |
-          conda install -c labscript-suite setuptools-conda "conda-build<25" && ^
-          python make_packages.py ${{ runner.temp }}
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
         with:
-          name: conda_packages-${{ matrix.os }}-py${{ matrix.python}}-${{ matrix.arch }}
+          name: conda_packages-${{ matrix.os }}
           path: ./conda_packages
+          if-no-files-found: error
 
   upload:
     name: Upload
@@ -93,7 +73,7 @@ jobs:
     steps:
       
       - name: Download Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: conda_packages-*
           path: ./conda_packages
@@ -105,7 +85,7 @@ jobs:
           miniforge-version: "latest"
           auto-update-conda: true
           conda-remove-defaults: true
-          auto-activate-base: true
+          auto-activate: true
           activate-environment: ""
 
       - name: Install Anaconda cloud client

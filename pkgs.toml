@@ -2,9 +2,15 @@
 version = "latest"
 source = "pypi"
 noarch = true
-build_args = [] # --noarch will automatically be added if applicable
+build_args = []  # --noarch will automatically be added if applicable
 # The below will only be used if noarch is False
-pythons = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+pythons = [
+    "3.10",
+    "3.11",
+    "3.12",
+    "3.13",
+    # "3.14",
+]
 platforms = ["win-64", "osx-64", "linux"]
 
 
