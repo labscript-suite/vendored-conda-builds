@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "windows-latest"]
+        os: ["ubuntu-latest", "windows-2022"]
 
     if: github.repository == 'labscript-suite/vendored-conda-builds'
     steps:
