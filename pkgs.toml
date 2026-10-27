@@ -14,9 +14,6 @@ pythons = [
 platforms = ["win-64", "osx-64", "linux"]
 
 
-[spinapi]
-# TODO: configure spinapi to build and release itself since we own it
-
 [PyDAQmx]
 build_args = ['--license-file=None']
 
